@@ -1,4 +1,4 @@
-package tech.ada.java.todolist;
+package tech.ada.java.todolist.todo;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
