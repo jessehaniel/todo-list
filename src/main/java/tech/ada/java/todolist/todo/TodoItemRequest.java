@@ -1,4 +1,4 @@
-package tech.ada.java.todolist;
+package tech.ada.java.todolist.todo;
 
 import java.time.LocalDateTime;
 import lombok.Getter;
@@ -15,10 +15,4 @@ public class TodoItemRequest {
     private Boolean concluido;
     private LocalDateTime dataHora;
 
-    public TodoItemRequest(String titulo, String descricao, Boolean concluido, LocalDateTime dataHora) {
-        this.titulo = titulo;
-        this.descricao = descricao;
-        this.concluido = concluido;
-        this.dataHora = dataHora;
-    }
 }
