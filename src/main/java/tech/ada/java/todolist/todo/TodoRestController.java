@@ -2,6 +2,7 @@ package tech.ada.java.todolist.todo;
 
 import java.util.List;
 import java.util.UUID;
+import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -17,86 +18,85 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import tech.ada.java.todolist.client.Todo;
 import tech.ada.java.todolist.client.TodoRestRepository;
+import tech.ada.java.todolist.exceptions.NaoEncontradoException;
 
 @RestController
 @RequestMapping("/todo-itens")
+@RequiredArgsConstructor
 public class TodoRestController {
 
-    private final TodoItemRepository repository;
+    private final TodoItemService service;
     private final ModelMapper modelMapper;
     private final TodoRestRepository todoRestRepository;
 
-    public TodoRestController(TodoItemRepository repository, ModelMapper modelMapper, TodoRestRepository todoRestRepository) {
-        this.repository = repository;
-        this.modelMapper = modelMapper;
-        this.todoRestRepository = todoRestRepository;
-    }
-
     @GetMapping
-    public List<TodoItem> listarTodos() {
-        return this.repository.findAll();
-    }
-
-    @GetMapping("/{uuid}")
-    public TodoItemResponse getPorId(@PathVariable UUID uuid) {
-        return this.repository.findByUuid(uuid)
-            .map(this::convertResponse)
-            .orElseThrow();
-    }
-
-    @GetMapping(params = {"descricao"})
-    public List<TodoItemResponse> buscarPorDescricao(@RequestParam String descricao) {
-        return this.repository.findByDescricaoContainingIgnoreCase(descricao).stream()
+    public List<TodoItemResponse> listarTodos() {
+        return this.service.listarTodos().stream()
             .map(this::convertResponse)
             .toList();
     }
 
-    private TodoItemResponse convertResponse(TodoItem todo) {
+    @GetMapping("/{uuid}")
+    public TodoItemResponse getPorUuid(@PathVariable UUID uuid) {
+        return this.service.getPorUuid(uuid)
+            .map(this::convertResponse)
+            .orElseThrow(() -> new NaoEncontradoException("TodoItem não encontrado"));
+    }
+
+    @GetMapping(params = {"descricao"})
+    public List<TodoItemResponse> buscarPorDescricao(@RequestParam String descricao) {
+        return this.service.buscarPorDescricao(descricao).stream()
+            .map(this::convertResponse)
+            .toList();
+    }
+
+    private TodoItemResponse convertResponse(TodoItemDto todo) {
         return this.modelMapper.map(todo, TodoItemResponse.class);
     }
 
-    private TodoItem convertRequest(TodoItemRequest request) {
-        return this.modelMapper.map(request, TodoItem.class);
-    }
-
-    @PostMapping
-    @ResponseStatus(HttpStatus.CREATED)
-    public TodoItemResponse cadastrar(@RequestBody TodoItemRequest request) {
-        TodoItem todoItem = this.convertRequest(request);
-        TodoItem novoItem = this.repository.save(todoItem);
-        return this.convertResponse(novoItem);
+    private TodoItemDto convertRequest(TodoItemRequest request) {
+        return this.modelMapper.map(request, TodoItemDto.class);
     }
 
     @PutMapping("{uuid}")
     public TodoItemResponse substituir(@PathVariable UUID uuid, @RequestBody TodoItemRequest request) {
-        TodoItem todoItem = this.repository.findByUuid(uuid).orElseThrow();
-        todoItem.setTitulo(request.getTitulo());
-        todoItem.setDescricao(request.getDescricao());
-        todoItem.setDataHora(request.getDataHora());
-        todoItem.setConcluido(request.getConcluido());
-        TodoItem updated = this.repository.save(todoItem);
+        TodoItemDto updated = this.service.substituir(uuid, this.convertRequest(request));
         return this.convertResponse(updated);
     }
 
     @PatchMapping("{uuid}/concluir")
     public TodoItemResponse marcarConcluido(@PathVariable UUID uuid) {
-        TodoItem todoItem = this.repository.findByUuid(uuid).orElseThrow();
-        todoItem.setConcluido(true);
-        TodoItem updated = this.repository.save(todoItem);
-        return this.convertResponse(updated);
+        TodoItemDto concluido = this.service.marcarConcluido(uuid);
+        return this.convertResponse(concluido);
     }
 
     @DeleteMapping("{uuid}")
     public void excluir(@PathVariable UUID uuid) {
-        TodoItem todoItem = this.repository.findByUuid(uuid).orElseThrow();
-        this.repository.delete(todoItem);
+        this.service.excluir(uuid);
+    }
+
+    @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
+    public TodoItemResponse cadastrar(@RequestBody TodoItemRequest request) {
+        TodoItemDto novoItem = this.service.cadastrar(this.convertRequest(request));
+        return this.convertResponse(novoItem);
     }
 
     @PostMapping("/carregar-dummy")
     public Boolean carregarFromDummy() {
         List<Todo> dummyList = this.todoRestRepository.getAll(10L).todos();
-        dummyList.forEach(System.out::println);
-        return false;
+        dummyList.stream()
+            .map(this::converterTodoEmTodoItem)
+            .forEach(this.service::cadastrar);
+        return true;
+    }
+
+    private TodoItemDto converterTodoEmTodoItem(Todo todo) {
+        TodoItemDto todoItem = new TodoItemDto();
+        todoItem.setConcluido(todo.completed());
+        todoItem.setTitulo(todo.todo());
+        todoItem.setDescricao(todo.todo());
+        return todoItem;
     }
 
 }
