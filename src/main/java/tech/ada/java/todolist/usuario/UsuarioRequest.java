@@ -1,7 +1,7 @@
 package tech.ada.java.todolist.usuario;
 
 import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
@@ -13,11 +13,11 @@ public class UsuarioRequest {
 
     @Email
     private String email;
-    @NotBlank
+    @Pattern(regexp = "[\\w.]{5,20}", message = "Username deve ser alfanumérico entre 5 e 20 caracteres (lowercase, uppercase, numbers, _, .)")
     private String username;
-    //TODO -> senha complexa, 10 caracteres, pelo menos 1 maiúscula, 1 minúscula, números, sem caracteres especiais
-    //Regex
-    private String senha;
+    @Pattern(regexp = "^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#&()–[{}]:;',?/*~$^+=<>]).{8,20}$",
+        message = "A senha deve conter de 8 a 20 caracteres (lowercase, uppercase, numbers, special, no-sequences)")
+    private String password;
 
 
 

@@ -5,6 +5,7 @@ import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -28,14 +29,18 @@ public class UsuarioRestController {
             .toList();
     }
 
-    private UsuarioResponse convertResponse(UsuarioDto usuario) {
-        return this.modelMapper.map(usuario, UsuarioResponse.class);
-    }
-
     @GetMapping("/{username}")
     public UsuarioResponse getByUsername(@PathVariable String username) {
         UsuarioDto usuarioDto = this.service.getByUsername(username);
         return convertResponse(usuarioDto);
+    }
+
+    private UsuarioResponse convertResponse(UsuarioDto usuario) {
+        return this.modelMapper.map(usuario, UsuarioResponse.class);
+    }
+
+    private UsuarioDto convertRequest(UsuarioRequest usuario) {
+        return this.modelMapper.map(usuario, UsuarioDto.class);
     }
 
     @PostMapping
@@ -46,8 +51,10 @@ public class UsuarioRestController {
         return this.convertResponse(usuarioSalvo);
     }
 
-    private UsuarioDto convertRequest(UsuarioRequest usuario) {
-        return this.modelMapper.map(usuario, UsuarioDto.class);
+    @DeleteMapping("/{username}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void desativar(@PathVariable String username) {
+        this.service.desativar(username);
     }
 
 }
