@@ -6,6 +6,7 @@ import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
+import tech.ada.java.todolist.usuario.UsuarioService;
 
 @Service
 @RequiredArgsConstructor
@@ -13,6 +14,7 @@ public class TodoItemService {
 
     private final TodoItemRepository repository;
     private final ModelMapper modelMapper;
+    private final UsuarioService usuarioService;
 
     public List<TodoItemDto> listarTodos() {
         return this.repository.findAll().stream()
@@ -63,8 +65,24 @@ public class TodoItemService {
 
     public TodoItemDto cadastrar(TodoItemDto todoItemDto) {
         TodoItem todoItem = this.convertFromDto(todoItemDto);
+        final var usuario = this.usuarioService.getByUsernameEntity(todoItemDto.getUsuario().getUsername());
+        todoItem.setUsuario(usuario);
         todoItem.setUuid(UUID.randomUUID());
         final var saved = this.repository.save(todoItem);
         return this.convertDto(saved);
+    }
+
+    public TodoItemDto atribuirUsuario(UUID uuid, String username) {
+        final var todoItem = this.repository.findByUuid(uuid).orElseThrow();
+        final var usuario = this.usuarioService.getByUsernameEntity(username);
+        todoItem.setUsuario(usuario);
+        final var saved = this.repository.save(todoItem);
+        return this.convertDto(saved);
+    }
+
+    public List<TodoItemDto> listarMinhasTarefas(String username) {
+        return this.repository.findByUsuarioUsername(username).stream()
+            .map(this::convertDto)
+            .toList();
     }
 }

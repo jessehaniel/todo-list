@@ -34,6 +34,11 @@ public class UsuarioService {
             .orElseThrow(() -> new NaoEncontradoException("Usuário não encontrado"));
     }
 
+    public Usuario getByUsernameEntity(String username) {
+        return this.repository.findByUsername(username)
+            .orElseThrow(() -> new NaoEncontradoException("Usuário não encontrado"));
+    }
+
     public UsuarioDto cadastrar(UsuarioDto usuarioDto) {
         Usuario usuario = this.convertFromDto(usuarioDto);
         final var save = this.repository.save(usuario);

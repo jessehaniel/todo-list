@@ -17,4 +17,7 @@ public class UsuarioDto {
     private String username;
     private String password;
 
+    public UsuarioDto(String username) {
+        this.username = username;
+    }
 }

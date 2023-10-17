@@ -12,4 +12,5 @@ public interface TodoItemRepository extends JpaRepository<TodoItem, Long> {
     Optional<TodoItem> findByUuid(UUID uuid);
     List<TodoItem> findByDescricaoContainingIgnoreCase(String descricao);
 
+    List<TodoItem> findByUsuarioUsername(String username);
 }
