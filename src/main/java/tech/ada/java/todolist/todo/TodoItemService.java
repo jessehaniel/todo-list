@@ -63,6 +63,7 @@ public class TodoItemService {
 
     public TodoItemDto cadastrar(TodoItemDto todoItemDto) {
         TodoItem todoItem = this.convertFromDto(todoItemDto);
+        todoItem.setUuid(UUID.randomUUID());
         final var saved = this.repository.save(todoItem);
         return this.convertDto(saved);
     }

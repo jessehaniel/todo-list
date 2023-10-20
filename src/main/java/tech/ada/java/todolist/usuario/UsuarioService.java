@@ -30,6 +30,7 @@ public class UsuarioService {
 
     public UsuarioDto getByUsername(String username) {
         return this.repository.findByUsername(username)
+            .map(this::convertDto)
             .orElseThrow(() -> new NaoEncontradoException("Usuário não encontrado"));
     }
 
@@ -37,5 +38,12 @@ public class UsuarioService {
         Usuario usuario = this.convertFromDto(usuarioDto);
         final var save = this.repository.save(usuario);
         return this.convertDto(save);
+    }
+
+    public void desativar(String username) {
+        final var usuario = this.repository.findByUsername(username)
+            .orElseThrow(() -> new NaoEncontradoException("Usuário não encontrado"));
+        usuario.setActive(false);
+        this.repository.save(usuario);
     }
 }
