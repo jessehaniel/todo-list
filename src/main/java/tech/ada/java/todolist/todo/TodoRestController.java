@@ -1,10 +1,12 @@
 package tech.ada.java.todolist.todo;
 
+import java.security.Principal;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -16,9 +18,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
-import tech.ada.java.todolist.client.Todo;
-import tech.ada.java.todolist.client.TodoRestRepository;
 import tech.ada.java.todolist.exceptions.NaoEncontradoException;
+import tech.ada.java.todolist.usuario.UsuarioDto;
 
 @RestController
 @RequestMapping("/todo-itens")
@@ -27,16 +28,24 @@ public class TodoRestController {
 
     private final TodoItemService service;
     private final ModelMapper modelMapper;
-    private final TodoRestRepository todoRestRepository;
 
-    @GetMapping
+    @GetMapping("/all")
+    @PreAuthorize("hasRole(T(tech.ada.java.todolist.usuario.Role).ADMIN.name())")
     public List<TodoItemResponse> listarTodos() {
         return this.service.listarTodos().stream()
             .map(this::convertResponse)
             .toList();
     }
 
+    @GetMapping
+    public List<TodoItemResponse> listarMinhasTarefas(Principal principal) {
+        return this.service.listarMinhasTarefas(principal.getName()).stream()
+            .map(this::convertResponse)
+            .toList();
+    }
+
     @GetMapping("/{uuid}")
+    @PreAuthorize("hasRole(T(tech.ada.java.todolist.usuario.Role).CLIENTE.name())")
     public TodoItemResponse getPorUuid(@PathVariable UUID uuid) {
         return this.service.getPorUuid(uuid)
             .map(this::convertResponse)
@@ -44,6 +53,7 @@ public class TodoRestController {
     }
 
     @GetMapping(params = {"descricao"})
+    @PreAuthorize("hasRole(T(tech.ada.java.todolist.usuario.Role).CLIENTE.name())")
     public List<TodoItemResponse> buscarPorDescricao(@RequestParam String descricao) {
         return this.service.buscarPorDescricao(descricao).stream()
             .map(this::convertResponse)
@@ -59,6 +69,7 @@ public class TodoRestController {
     }
 
     @PutMapping("{uuid}")
+    @PreAuthorize("hasRole(T(tech.ada.java.todolist.usuario.Role).CLIENTE.name())")
     public TodoItemResponse substituir(@PathVariable UUID uuid, @RequestBody TodoItemRequest request) {
         TodoItemDto updated = this.service.substituir(uuid, this.convertRequest(request));
         return this.convertResponse(updated);
@@ -78,25 +89,11 @@ public class TodoRestController {
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public TodoItemResponse cadastrar(@RequestBody TodoItemRequest request) {
-        TodoItemDto novoItem = this.service.cadastrar(this.convertRequest(request));
+        final var todoItemDto = this.convertRequest(request);
+        todoItemDto.setUsuario(new UsuarioDto(request.getUsername()));
+        TodoItemDto novoItem = this.service.cadastrar(todoItemDto);
         return this.convertResponse(novoItem);
     }
 
-    @PostMapping("/carregar-dummy")
-    public Boolean carregarFromDummy() {
-        List<Todo> dummyList = this.todoRestRepository.getAll(10L).todos();
-        dummyList.stream()
-            .map(this::converterTodoEmTodoItem)
-            .forEach(this.service::cadastrar);
-        return true;
-    }
-
-    private TodoItemDto converterTodoEmTodoItem(Todo todo) {
-        TodoItemDto todoItem = new TodoItemDto();
-        todoItem.setConcluido(todo.completed());
-        todoItem.setTitulo(todo.todo());
-        todoItem.setDescricao(todo.todo());
-        return todoItem;
-    }
 
 }

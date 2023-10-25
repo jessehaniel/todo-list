@@ -15,5 +15,6 @@ public class TodoItemRequest {
     private Boolean concluido;
     private LocalDateTime dataHora;
     private PrioridadeEnum prioridade;
+    private String username;
 
 }
