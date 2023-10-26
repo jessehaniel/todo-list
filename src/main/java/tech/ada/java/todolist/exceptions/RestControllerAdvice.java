@@ -52,6 +52,13 @@ public class RestControllerAdvice extends ResponseEntityExceptionHandler {
         return String.format(METHOD_ARGUMENT_NOT_VALID_ERROR_MESSAGE, error.getObjectName(), error.getDefaultMessage());
     }
 
+    @ExceptionHandler(value = IllegalArgumentException.class)
+    public ResponseEntity<ErrorResponse> illegalArgumentExceptionHandler(IllegalArgumentException ex) {
+        HttpStatus httpStatus = HttpStatus.BAD_REQUEST;
+        final ErrorResponse errorResponse = new ErrorResponse(ex.getClass(), httpStatus, "Sintaxe incorreta: " + ex.getMessage());
+        return new ResponseEntity<>(errorResponse, httpStatus);
+    }
+
     @ExceptionHandler(value = NaoEncontradoException.class)
     public ResponseEntity<ErrorResponse> recursoNaoEncontradoExceptionHandler(NaoEncontradoException ex) {
         final ErrorResponse errorResponse = new ErrorResponse(ex.getClass(), ex.getStatus(), ex.getMessage());

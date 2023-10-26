@@ -5,6 +5,8 @@ import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -27,9 +29,10 @@ import tech.ada.java.todolist.usuario.UsuarioDto;
 public class TodoRestController {
 
     private final TodoItemService service;
+    private final TodoItemRepository repository;
     private final ModelMapper modelMapper;
 
-    @GetMapping("/all")
+    @GetMapping
     @PreAuthorize("hasRole(T(tech.ada.java.todolist.usuario.Role).ADMIN.name())")
     public List<TodoItemResponse> listarTodos() {
         return this.service.listarTodos().stream()
@@ -37,7 +40,7 @@ public class TodoRestController {
             .toList();
     }
 
-    @GetMapping
+    @GetMapping("/minhas-tarefas")
     public List<TodoItemResponse> listarMinhasTarefas(Principal principal) {
         return this.service.listarMinhasTarefas(principal.getName()).stream()
             .map(this::convertResponse)
@@ -58,6 +61,16 @@ public class TodoRestController {
         return this.service.buscarPorDescricao(descricao).stream()
             .map(this::convertResponse)
             .toList();
+    }
+
+    @GetMapping(value = "/complexo", params = { "query" })//todo-itens?query=dataHora>2023-10-25ANDconcluido:true
+    public Page<TodoItem> complexo(@RequestBody TodoItemRequest example, @RequestParam String query, Pageable pageable) {
+        if (example != null) {
+            return this.service.findByExample(this.convertRequest(example), pageable);
+        } else if (query != null) {
+            return this.service.findWithSpecs(query, pageable);
+        }
+        return this.service.findAll(pageable);
     }
 
     private TodoItemResponse convertResponse(TodoItemDto todo) {
