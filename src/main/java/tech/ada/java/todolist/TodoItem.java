@@ -3,7 +3,6 @@ package tech.ada.java.todolist;
 import java.time.LocalDateTime;
 import java.util.UUID;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 
@@ -28,14 +27,6 @@ public class TodoItem {
         this.descricao = descricao;
         this.dataHora = dataHora;
         this.concluido = false;
-    }
-
-    public TodoItem(TodoItemRequest request) {
-        this();
-        this.titulo = request.getTitulo();
-        this.descricao = request.getDescricao();
-        this.dataHora = request.getDataHora();
-        this.concluido = request.getConcluido();
     }
 
     public TodoItemResponse toResponse() {
