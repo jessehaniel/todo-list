@@ -2,15 +2,14 @@ package tech.ada.java.todolist.login;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
-import java.security.Key;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Base64;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.function.Function;
+import javax.crypto.SecretKey;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
@@ -24,11 +23,11 @@ public class JwtService {
     public String createToken(UserDetails userDetails) {
         final var now = LocalDateTime.now();
         return Jwts.builder()
-            .setClaims(new HashMap<>())
-            .setSubject(userDetails.getUsername())
-            .setIssuedAt(convertFromLocalDateTime(now))
-            .setExpiration(convertFromLocalDateTime(now.plusHours(1L)))
-            .signWith(this.getSignKey(), SignatureAlgorithm.HS256)
+            .claims(new HashMap<>())
+            .subject(userDetails.getUsername())
+            .issuedAt(convertFromLocalDateTime(now))
+            .expiration(convertFromLocalDateTime(now.plusHours(1L)))
+            .signWith(this.getSignKey())
             .compact();
     }
 
@@ -36,7 +35,7 @@ public class JwtService {
         return Date.from(localDateTime.atZone(ZoneId.systemDefault()).toInstant());
     }
 
-    private Key getSignKey() {
+    private SecretKey getSignKey() {
         return Keys.hmacShaKeyFor(Base64.getEncoder().encode(this.secret.getBytes()));
     }
 
@@ -50,11 +49,11 @@ public class JwtService {
     }
 
     private Claims extractAllClaims(String token) {
-        return Jwts.parserBuilder()
-            .setSigningKey(this.getSignKey())
+        return Jwts.parser()
+            .verifyWith(this.getSignKey())
             .build()
-            .parseClaimsJws(token)
-            .getBody();
+            .parseSignedClaims(token)
+            .getPayload();
     }
 
     public boolean isTokenValid(String token, UserDetails userDetails) {
